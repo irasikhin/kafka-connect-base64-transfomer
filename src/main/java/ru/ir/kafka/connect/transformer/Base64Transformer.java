@@ -1,13 +1,12 @@
 package ru.ir.kafka.connect.transformer;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.ConnectRecord;
+import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.transforms.Transformation;
 
-import java.util.Base64;
 import java.util.Map;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Base64Transformer<R extends ConnectRecord<R>> implements Transformation<R> {
     @Override
@@ -15,9 +14,9 @@ public class Base64Transformer<R extends ConnectRecord<R>> implements Transforma
         return record.newRecord(
                 record.topic(),
                 record.kafkaPartition(),
-                record.keySchema(),
+                SchemaBuilder.OPTIONAL_STRING_SCHEMA,
                 toBase64(record.key()),
-                record.valueSchema(),
+                SchemaBuilder.OPTIONAL_STRING_SCHEMA,
                 toBase64(record.value()),
                 record.timestamp(),
                 record.headers()
@@ -25,11 +24,14 @@ public class Base64Transformer<R extends ConnectRecord<R>> implements Transforma
     }
 
     private String toBase64(final Object input) {
+        if (input == null) {
+            return null;
+        }
         if (!(input instanceof byte[])) {
             throw new IllegalStateException("input must be byte array");
         }
 
-        return new String(Base64.getEncoder().encode((byte[]) input), UTF_8);
+        return Base64.encodeBase64String((byte[]) input);
     }
 
     @Override
